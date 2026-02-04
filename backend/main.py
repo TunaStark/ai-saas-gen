@@ -1,38 +1,56 @@
 # backend/main.py
 
-from fastapi import FastAPI
+import os
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from google import genai 
+from dotenv import load_dotenv
 
-# Uygulamayı oluştur
-app = FastAPI(title="AI SaaS API", version="1.0.0")
+load_dotenv()
 
-# --- GÜVENLİK AYARI (CORS) ---
-# Frontend'in adresi (Next.js genelde 3000'de çalışır)
-origins = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise ValueError("HATA: .env dosyasında GEMINI_API_KEY bulunamadı!")
 
-# Middleware ekliyoruz: Bu, kapıdaki güvenlik görevlisi gibidir.
-# Sadece izin verilen adreslerden gelen isteklere "Geç" der.
+client = genai.Client(api_key=api_key)
+
+app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,      # Hangi siteler erişebilir?
-    allow_credentials=True,     # Çerezlere (cookie) izin verelim mi?
-    allow_methods=["*"],        # GET, POST, DELETE... hepsine izin ver
-    allow_headers=["*"],        # Tüm başlıklara izin ver
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-# --- ENDPOINTLER (Uç Noktalar) ---
+class AIRequest(BaseModel):
+    prompt: str
+
 
 @app.get("/")
 def read_root():
-    return {"message": "AI SaaS Backend Çalışıyor! 🚀"}
+    return {"durum": "AI Servisi (v2 SDK) Aktif 🚀"}
 
-@app.get("/api/health")
-def health_check():
-    """
-    Sistemin sağlıklı olup olmadığını kontrol eden endpoint.
-    Frontend bunu çağırarak sunucunun açık olup olmadığını anlar.
-    """
-    return {"status": "ok", "message": "Bağlantı Başarılı"}
+@app.post("/api/generate")
+async def generate_content(request: AIRequest):
+    try:
+        response = client.models.generate_content(
+            model='gemini-2.5-flash-lite', 
+            contents=request.prompt
+        )
+        
+        return {"result": response.text}
+    
+    except Exception as e:
+        hata_mesaji = str(e)
+        
+        if "429" in hata_mesaji or "Quota" in hata_mesaji or "ResourceExhausted" in hata_mesaji:
+            raise HTTPException(
+                status_code=429, 
+                detail="Üzgünüz, sistemin anlık kullanım limiti doldu. Lütfen 1-2 dakika bekleyip tekrar deneyin."
+            )
+        
+        print(f"Bilinmeyen Hata: {hata_mesaji}")
+        raise HTTPException(status_code=500, detail="Sunucu hatası oluştu.")
