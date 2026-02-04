@@ -1,55 +1,102 @@
-// frontend/src/app/page.tsx
-"use client"; // Bu satır şart, çünkü butona tıklama olayı var (Client Component)
+"use client";
 
 import { useState } from "react";
 
 export default function Home() {
-  const [mesaj, setMesaj] = useState<string>("Test bekleniyor...");
-  const [yukleniyor, setYukleniyor] = useState<boolean>(false);
+  const [prompt, setPrompt] = useState<string>("");
+  const [result, setResult] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const baglantiyiTestEt = async () => {
-    setYukleniyor(true);
-    setMesaj("Sinyal gönderiliyor...");
+  const generateContent = async () => {
+    if (!prompt) return;
+
+    setLoading(true);
+    setResult("");
 
     try {
-      // Backend'e (Python'a) istek atıyoruz
-      const cevap = await fetch("http://127.0.0.1:8000/api/health");
-      
-      if (!cevap.ok) throw new Error("Bağlantı hatası!");
+      const response = await fetch("http://127.0.0.1:8000/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: prompt }),
+      });
 
-      const veri = await cevap.json();
-      
-      // Gelen cevabı ekrana yazalım
-      setMesaj(`BAŞARILI! 🚀 Gelen Cevap: ${veri.message} (Durum: ${veri.status})`);
-    } catch (hata) {
-      console.error(hata);
-      setMesaj("HATA: Backend'e ulaşılamadı. Terminali kontrol et!");
+      const data = await response.json();
+
+      if (response.ok) {
+        setResult(data.result);
+      } else if (response.status === 429) {
+        setResult("⏳ " + data.detail);
+      } else {
+        setResult("⚠️ Hata: " + (data.detail || "Bir sorun oluştu."));
+      }
+    } catch (error) {
+      console.error(error);
+      setResult("🔌 Bağlantı Hatası: Backend'e ulaşılamıyor.");
     } finally {
-      setYukleniyor(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-black text-white p-4">
-      <div className="max-w-md w-full bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-2xl text-center">
-        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-          AI SaaS Platform
+    <div className="min-h-screen bg-gray-950 text-gray-100 flex flex-col items-center py-10 px-4">
+      <div className="max-w-3xl w-full text-center mb-10">
+        <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-4">
+          AI Content Generator
         </h1>
-        <p className="text-gray-400 mb-8">Frontend & Backend Bağlantı Testi</p>
+        <p className="text-gray-400 text-lg">
+          Google Gemini destekli, yeni nesil içerik üretim asistanınız.
+        </p>
+      </div>
 
-        <div className="bg-gray-800 rounded-lg p-4 mb-6 min-h-[80px] flex items-center justify-center">
-          <p className={`${mesaj.includes("HATA") ? "text-red-400" : mesaj.includes("BAŞARILI") ? "text-green-400" : "text-gray-300"} font-mono text-sm`}>
-            {mesaj}
-          </p>
+      <div className="max-w-3xl w-full bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-2xl shadow-blue-900/20">
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-gray-400 mb-2">
+            AI&apos;ya ne yaptırmak istersin?
+          </label>
+          <textarea
+            className="w-full h-32 bg-gray-800 border border-gray-700 rounded-xl p-4 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+            placeholder="Örn: Yazılım mühendisliği kariyeri hakkında motive edici bir LinkedIn gönderisi yaz..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+          />
         </div>
 
         <button
-          onClick={baglantiyiTestEt}
-          disabled={yukleniyor}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+          onClick={generateContent}
+          disabled={loading || !prompt}
+          className="w-full py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 rounded-xl font-bold text-lg shadow-lg transform active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {yukleniyor ? "Bağlanılıyor..." : "Backend'e Sinyal Gönder"}
+          {loading ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Düşünüyor...
+            </>
+          ) : (
+            "İçerik Üret ⚡"
+          )}
         </button>
+
+        {result && (
+          <div className="mt-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold text-gray-300">Sonuç:</h3>
+              <button
+                onClick={() => navigator.clipboard.writeText(result)}
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Kopyala
+              </button>
+            </div>
+
+            <div className="p-6 bg-gray-800/50 rounded-xl border border-gray-700/50 text-gray-200 leading-relaxed whitespace-pre-wrap">
+              {result}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-10 text-gray-600 text-sm">
+        Powered by Google Gemini 1.5 Flash
       </div>
     </div>
   );
