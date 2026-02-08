@@ -21,7 +21,7 @@ export default function Sidebar({ history, sessionId, onNewChat, onLoadItem }: S
       {/* Başlık */}
       <div className="p-4 border-b border-gray-800">
         <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-4">
-          AI Studio
+          Guralp Solutions - AI Studio
         </h2>
         <button 
           onClick={onNewChat}
