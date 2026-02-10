@@ -21,6 +21,7 @@ export default function Home() {
   const [sessionId, setSessionId] = useState<string>("");
   const [cooldown, setCooldown] = useState<number>(0);
   const [recentPrompt, setRecentPrompt] = useState<string>("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   // Başlangıç Ayarları
   useEffect(() => {
@@ -59,8 +60,8 @@ export default function Home() {
     if (!prompt || cooldown > 0) return;
 
     const currentPrompt = prompt;
-    setRecentPrompt(currentPrompt); // 1. Soruyu ekrana sabitle
-    setPrompt(""); // 2. Input kutusunu temizle
+    setRecentPrompt(currentPrompt);
+    setPrompt(""); 
     setLoading(true);
     setResult("");
 
@@ -69,7 +70,7 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: currentPrompt, // Backend'e giden veri
+          prompt: currentPrompt, 
           session_id: sessionId,
         }),
       });
@@ -89,11 +90,10 @@ export default function Home() {
         startCooldown(10);
       } else {
         setResult("⚠️ Hata: " + data.detail);
-        // Hata olursa inputa geri koy ki düzeltsin
         setPrompt(currentPrompt);
       }
     } catch (error) {
-      setResult("🔌 Bağlantı Hatası");
+      setResult("🔌 Bağlantı Hatası: " + error);
       setPrompt(currentPrompt);
     } finally {
       setLoading(false);
@@ -101,9 +101,10 @@ export default function Home() {
   };
 
   const loadHistoryItem = (item: HistoryItem) => {
-    setRecentPrompt(item.prompt); // Balona yaz
-    setResult(item.response); // Cevabı yaz
-    setPrompt(""); // Input boş kalsın
+    setRecentPrompt(item.prompt);
+    setResult(item.response); 
+    setPrompt("");
+    setIsSidebarOpen(false);
   };
 
   return (
@@ -114,10 +115,13 @@ export default function Home() {
         onNewChat={() => {
           setPrompt("");
           setResult("");
+          setRecentPrompt(""); 
+          setIsSidebarOpen(false); 
         }}
         onLoadItem={loadHistoryItem}
+        isOpen={isSidebarOpen} 
+        close={() => setIsSidebarOpen(false)} 
       />
-
       <ChatArea
         recentPrompt={recentPrompt}
         prompt={prompt}
@@ -126,6 +130,7 @@ export default function Home() {
         loading={loading}
         onGenerate={generateContent}
         cooldown={cooldown}
+        onOpenSidebar={() => setIsSidebarOpen(true)}
       />
     </div>
   );
