@@ -1,4 +1,3 @@
-// frontend/components/ChatArea.tsx
 "use client";
 
 interface ChatAreaProps {
@@ -8,55 +7,61 @@ interface ChatAreaProps {
   loading: boolean;
   onGenerate: () => void;
   cooldown: number;
-  recentPrompt: string; // <-- YENİ PROP EKLENDİ
+  recentPrompt: string;
+  onOpenSidebar: () => void;
 }
 
 export default function ChatArea({ 
-  prompt, 
-  setPrompt, 
-  result, 
-  loading, 
-  onGenerate, 
-  cooldown,
-  recentPrompt // <-- Karşıla
+  prompt, setPrompt, result, loading, onGenerate, cooldown, recentPrompt, 
+  onOpenSidebar // <-- Buraya eklemeyi unutma
 }: ChatAreaProps) {
   return (
-    <main className="flex-1 flex flex-col h-full relative bg-gray-950">
+    <main className="flex-1 flex flex-col h-full relative bg-gray-950 w-full">
       
-      <div className="flex-1 overflow-y-auto p-8 pb-32 custom-scrollbar">
-        {/* Koşulu Değiştirdik: Son soru VEYA Sonuç varsa göster */}
+      {/* MOBİL HAMBURGER MENÜ BUTONU 
+          md:hidden -> Masaüstünde gizle, mobilde göster.
+      */}
+      <div className="absolute top-4 left-4 z-10 md:hidden">
+        <button 
+            onClick={onOpenSidebar}
+            className="p-2 bg-gray-800 rounded-lg text-white border border-gray-700 hover:bg-gray-700 active:scale-95 transition-transform"
+        >
+            ☰
+        </button>
+      </div>
+
+      {/* Scroll Edilebilir İçerik */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 custom-scrollbar">
         {!recentPrompt && !result ? (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
+          <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50 px-4">
               <div className="text-6xl">✨</div>
               <h3 className="text-2xl font-bold text-gray-300">Nasıl yardımcı olabilirim?</h3>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pt-10 md:pt-0">
              
-             {/* KULLANICI SORUSU: Artık recentPrompt kullanıyor */}
+             {/* Soru */}
              <div className="flex gap-4 mb-8">
-                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm font-bold text-white">S</div>
+                <div className="w-8 h-8 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center text-sm font-bold text-white">S</div>
                 <div className="bg-gray-800 p-4 rounded-2xl rounded-tl-none border border-gray-700 text-gray-200">
                   {recentPrompt} 
                 </div>
              </div>
 
-             {/* AI CEVABI */}
+             {/* Cevap */}
              {(result || loading) && (
-               <div className="flex gap-4">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-xs font-bold text-white">AI</div>
-                  <div className="flex-1">
+               <div className="flex gap-4 pb-30">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex flex-shrink-0 items-center justify-center text-xs font-bold text-white">AI</div>
+                  <div className="flex-1 min-w-0"> 
                     {loading && !result ? (
-                        // Yüklenirken gösterilecek iskelet (Opsiyonel Güzellik)
                         <div className="flex space-x-2 animate-pulse p-4">
                             <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                             <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                             <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                         </div>
                     ) : (
-                        // Cevap gelince
                         <>
-                        <div className="bg-gray-900/50 p-6 rounded-2xl rounded-tl-none border border-gray-800/50 text-gray-200 leading-relaxed whitespace-pre-wrap shadow-xl">
+                        <div className="bg-gray-900/50 p-6 rounded-2xl rounded-tl-none border border-gray-800/50 text-gray-200 leading-relaxed whitespace-pre-wrap shadow-xl overflow-x-auto">
                             {result}
                         </div>
                         <button 
@@ -74,11 +79,11 @@ export default function ChatArea({
         )}
       </div>
 
-      {/* INPUT ALANI: Burası hala 'prompt' kullanıyor (Temizlenmesi gereken yer) */}
-      <div className="absolute bottom-0 left-0 right-0 bg-gray-950/80 backdrop-blur-md border-t border-gray-800 p-6">
+      {/* Input Alanı */}
+      <div className="absolute bottom-0 left-0 right-0 bg-gray-950/80 backdrop-blur-md border-t border-gray-800 p-4 md:p-6">
         <div className="max-w-3xl mx-auto relative">
           <textarea
-            className="w-full bg-gray-900 border border-gray-700 rounded-xl p-4 pr-16 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none shadow-lg"
+            className="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 md:p-4 pr-16 text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none shadow-lg text-sm md:text-base"
             placeholder="Bir şeyler yaz..."
             rows={2}
             value={prompt}
@@ -105,9 +110,6 @@ export default function ChatArea({
                <span>🚀</span>
             )}
           </button>
-        </div>
-        <div className="text-center mt-2 text-xs text-gray-600">
-           Gemini 2.5 Flash Lite & Supabase
         </div>
       </div>
     </main>
