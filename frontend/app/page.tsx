@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar"; // <-- Import ettik
 import ChatArea from "../components/ChatArea"; // <-- Import ettik
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 // Tip Tanımlamaları
 interface HistoryItem {
   id: number;
@@ -36,7 +37,7 @@ export default function Home() {
 
   const fetchHistory = async (id: string) => {
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/history/${id}`);
+      const res = await fetch(`${API_URL}/api/history/${id}`);
       if (res.ok) setHistory(await res.json());
     } catch (err) {
       console.error(err);
@@ -66,7 +67,7 @@ export default function Home() {
     setResult("");
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/generate", {
+      const response = await fetch(`${API_URL}/api/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
