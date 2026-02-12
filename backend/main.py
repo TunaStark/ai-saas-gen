@@ -38,7 +38,7 @@ class AIRequest(BaseModel):
 
 @app.get("/")
 def read_root():
-    return {"durum": "AI Servisi Hazır 🚀"}
+    return {"durum": "AI Servisi Hazır 🚀"} 
 
 # YENİ ENDPOINT: Geçmişi Getir
 @app.get("/api/history/{session_id}")
