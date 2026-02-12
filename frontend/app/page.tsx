@@ -108,6 +108,28 @@ export default function Home() {
     setIsSidebarOpen(false);
   };
 
+  const deleteHistoryItem = async (id: number) => {
+    if (!confirm("Bu sohbeti silmek istediğine emin misin?")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/history/${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        setHistory((prev) => prev.filter((item) => item.id !== id));
+        
+        if (recentPrompt === history.find(i => i.id === id)?.prompt) {
+             setPrompt("");
+             setResult("");
+             setRecentPrompt("");
+        }
+      }
+    } catch (error) {
+      console.error("Silme hatası:", error);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-950 overflow-hidden">
       <Sidebar
@@ -122,6 +144,7 @@ export default function Home() {
         onLoadItem={loadHistoryItem}
         isOpen={isSidebarOpen} 
         close={() => setIsSidebarOpen(false)} 
+        onDelete={deleteHistoryItem}
       />
       <ChatArea
         recentPrompt={recentPrompt}
