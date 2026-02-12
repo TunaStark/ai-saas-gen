@@ -82,3 +82,12 @@ async def generate_content(request: AIRequest):
              raise HTTPException(status_code=429, detail="Limit doldu.")
         print(f"Hata: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.delete("/api/history/{id}")
+async def delete_history(id: int):
+    try:
+        # Supabase'den ID'ye göre sil
+        supabase.table("history").delete().eq("id", id).execute()
+        return {"message": "Başarıyla silindi"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
