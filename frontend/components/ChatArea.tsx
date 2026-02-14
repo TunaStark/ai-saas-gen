@@ -40,10 +40,9 @@ export default function ChatArea({
       if (currentIndex === result.length) {
         clearInterval(intervalId);
       }
-    }, 10);
+    }, 5);
 
     return () => clearInterval(intervalId);
-
   }, [result, loading]);
 
   return (
@@ -98,7 +97,70 @@ export default function ChatArea({
                     <>
                       <div className="bg-gray-900/50 p-6 rounded-2xl rounded-tl-none border border-gray-800/50 text-gray-200 shadow-xl overflow-x-auto">
                         <div className="prose prose-invert max-w-none">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ node, ...props }) => (
+                                <p
+                                  className="mb-6 leading-relaxed text-gray-300"
+                                  {...props}
+                                />
+                              ),
+
+                              ul: ({ node, ...props }) => (
+                                <ul
+                                  className="list-disc pl-6 mb-6 space-y-2"
+                                  {...props}
+                                />
+                              ),
+                              ol: ({ node, ...props }) => (
+                                <ol
+                                  className="list-decimal pl-6 mb-6 space-y-2"
+                                  {...props}
+                                />
+                              ),
+
+                              li: ({ node, ...props }) => (
+                                <li
+                                  className="mb-2 leading-relaxed"
+                                  {...props}
+                                />
+                              ),
+
+                              h1: ({ node, ...props }) => (
+                                <h1
+                                  className="text-3xl font-bold mt-8 mb-6 text-white"
+                                  {...props}
+                                />
+                              ),
+                              h2: ({ node, ...props }) => (
+                                <h2
+                                  className="text-2xl font-bold mt-8 mb-4 text-white"
+                                  {...props}
+                                />
+                              ),
+                              h3: ({ node, ...props }) => (
+                                <h3
+                                  className="text-xl font-bold mt-6 mb-4 text-white"
+                                  {...props}
+                                />
+                              ),
+
+                              strong: ({ node, ...props }) => (
+                                <strong
+                                  className="font-bold text-blue-400"
+                                  {...props}
+                                />
+                              ),
+
+                              code: ({ node, ...props }) => (
+                                <code
+                                  className="bg-gray-800 text-yellow-300 px-1.5 py-0.5 rounded text-sm font-mono"
+                                  {...props}
+                                />
+                              ),
+                            }}
+                          >
                             {displayedText}
                           </ReactMarkdown>
                         </div>
