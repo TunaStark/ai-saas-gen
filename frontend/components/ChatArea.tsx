@@ -1,7 +1,12 @@
 "use client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+
+interface Message {
+  role: "user" | "model";
+  parts: string[];
+}
 
 interface ChatAreaProps {
   prompt: string;
@@ -12,6 +17,7 @@ interface ChatAreaProps {
   cooldown: number;
   recentPrompt: string;
   onOpenSidebar: () => void;
+  messages: Message[];
 }
 
 export default function ChatArea({
@@ -23,33 +29,44 @@ export default function ChatArea({
   cooldown,
   recentPrompt,
   onOpenSidebar,
+  messages,
 }: ChatAreaProps) {
   const [displayedText, setDisplayedText] = useState("");
+  const bottomRef = useRef<HTMLDivElement>(null);
 
+  // 1. SCROLL EFEKTİ
+  // Mesajlar değişince veya animasyonlu metin uzadıkça kaydır
   useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  // 2. MATRİX (DAKTİLO) EFEKTİ
+  useEffect(() => {
+    // Eğer sonuç boşsa veya yükleniyorsa temizle
     if (!result || loading) {
-      setDisplayedText("");
+      setDisplayedText(""); 
       return;
     }
 
     let currentIndex = 0;
-    const intervalId = setInterval(() => {
-      setDisplayedText(result.slice(0, currentIndex + 1));
-      currentIndex++;
+    // PÜF NOKTASI: İlk karakteri hemen bas ki boşluk görüp tam metne dönmesin
+    setDisplayedText(result[0] || ""); 
 
-      if (currentIndex === result.length) {
+    const intervalId = setInterval(() => {
+      if (currentIndex >= result.length - 1) {
         clearInterval(intervalId);
+        return;
       }
-    }, 5);
+      currentIndex++;
+      setDisplayedText((prev) => result.slice(0, currentIndex + 1));
+    }, 10); // Hız
 
     return () => clearInterval(intervalId);
   }, [result, loading]);
 
   return (
     <main className="flex-1 flex flex-col h-full relative bg-gray-950 w-full">
-      {/* MOBİL HAMBURGER MENÜ BUTONU 
-          md:hidden -> Masaüstünde gizle, mobilde göster.
-      */}
+      {/* MOBİL MENÜ BUTONU */}
       <div className="absolute top-4 left-4 z-10 md:hidden">
         <button
           onClick={onOpenSidebar}
@@ -59,9 +76,9 @@ export default function ChatArea({
         </button>
       </div>
 
-      {/* Scroll Edilebilir İçerik */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 custom-scrollbar">
-        {!recentPrompt && !result ? (
+      {/* İÇERİK ALANI */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar">
+        {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50 px-4">
             <div className="text-6xl">✨</div>
             <h3 className="text-2xl font-bold text-gray-300">
@@ -69,118 +86,97 @@ export default function ChatArea({
             </h3>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500 pt-10 md:pt-0">
-            {/* Soru */}
-            <div className="flex gap-4 mb-8">
-              <div className="w-8 h-8 rounded-full bg-gray-700 flex shrink-0 items-center justify-center text-sm font-bold text-white">
-                S
-              </div>
-              <div className="bg-gray-800 p-4 rounded-2xl rounded-tl-none border border-gray-700 text-gray-200">
-                {recentPrompt}
-              </div>
-            </div>
+          <div className="max-w-3xl mx-auto pt-10 md:pt-0 mb-32 space-y-8">
+            {messages.map((msg, index) => {
+              // Mantık: 
+              // 1. Bu son mesaj mı?
+              // 2. Bu bir model (AI) mesajı mı?
+              // 3. Elimizde aktif bir 'result' var mı? (Varsa şu an yazılıyor demektir)
+              const isLastAiMessage = index === messages.length - 1 && msg.role === "model";
+              const isStreaming = isLastAiMessage && result && !loading;
+              
+              // Eğer streaming varsa displayedText göster, yoksa veritabanındaki tam metni göster.
+              // Eğer displayedText boşsa bile (ilk anda) boşluk göster (" "), sakın tam metni gösterme.
+              const textToShow = isStreaming ? (displayedText || " ") : msg.parts[0];
 
-            {/* Cevap */}
-            {(result || loading) && (
-              <div className="flex gap-4 pb-30">
-                <div className="w-8 h-8 rounded-full bg-linear-to-r from-blue-600 to-purple-600 flex shrink-0 items-center justify-center text-xs font-bold text-white">
+              return (
+                <div
+                  key={index}
+                  className={`flex gap-4 ${msg.role === "user" ? "justify-end" : ""}`}
+                >
+                  {/* AI AVATAR */}
+                  {msg.role === "model" && (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex flex-shrink-0 items-center justify-center text-xs font-bold text-white">
+                      AI
+                    </div>
+                  )}
+
+                  {/* MESAJ BALONU */}
+                  <div
+                    className={`
+                      p-4 rounded-2xl max-w-[85%] border shadow-xl text-gray-200
+                      ${
+                        msg.role === "user"
+                          ? "bg-gray-800 border-gray-700 rounded-tr-none"
+                          : "bg-gray-900/50 border-gray-800/50 rounded-tl-none"
+                      }
+                    `}
+                  >
+                    {msg.role === "user" ? (
+                      msg.parts[0]
+                    ) : (
+                      // MARKDOWN ALANI
+                      <div className="prose prose-invert max-w-none">
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ node, ...props }) => <p className="mb-4 leading-relaxed text-gray-300" {...props} />,
+                            ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />,
+                            ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />,
+                            li: ({ node, ...props }) => <li className="mb-1 leading-relaxed" {...props} />,
+                            h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mt-6 mb-4 text-white" {...props} />,
+                            h2: ({ node, ...props }) => <h2 className="text-xl font-bold mt-5 mb-3 text-white" {...props} />,
+                            strong: ({ node, ...props }) => <strong className="font-bold text-blue-400" {...props} />,
+                            code: ({ node, ...props }) => <code className="bg-gray-800 text-yellow-300 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />,
+                          }}
+                        >
+                          {textToShow} 
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* USER AVATAR */}
+                  {msg.role === "user" && (
+                    <div className="w-8 h-8 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center text-sm font-bold text-white">
+                      S
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* YÜKLENİYOR ANİMASYONU */}
+            {loading && (
+              <div className="flex gap-4">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex flex-shrink-0 items-center justify-center text-xs font-bold text-white">
                   AI
                 </div>
-                <div className="flex-1 min-w-0">
-                  {loading && !result ? (
-                    <div className="flex space-x-2 animate-pulse p-4">
-                      <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                      <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="bg-gray-900/50 p-6 rounded-2xl rounded-tl-none border border-gray-800/50 text-gray-200 shadow-xl overflow-x-auto">
-                        <div className="prose prose-invert max-w-none">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            components={{
-                              p: ({ node, ...props }) => (
-                                <p
-                                  className="mb-6 leading-relaxed text-gray-300"
-                                  {...props}
-                                />
-                              ),
-
-                              ul: ({ node, ...props }) => (
-                                <ul
-                                  className="list-disc pl-6 mb-6 space-y-2"
-                                  {...props}
-                                />
-                              ),
-                              ol: ({ node, ...props }) => (
-                                <ol
-                                  className="list-decimal pl-6 mb-6 space-y-2"
-                                  {...props}
-                                />
-                              ),
-
-                              li: ({ node, ...props }) => (
-                                <li
-                                  className="mb-2 leading-relaxed"
-                                  {...props}
-                                />
-                              ),
-
-                              h1: ({ node, ...props }) => (
-                                <h1
-                                  className="text-3xl font-bold mt-8 mb-6 text-white"
-                                  {...props}
-                                />
-                              ),
-                              h2: ({ node, ...props }) => (
-                                <h2
-                                  className="text-2xl font-bold mt-8 mb-4 text-white"
-                                  {...props}
-                                />
-                              ),
-                              h3: ({ node, ...props }) => (
-                                <h3
-                                  className="text-xl font-bold mt-6 mb-4 text-white"
-                                  {...props}
-                                />
-                              ),
-
-                              strong: ({ node, ...props }) => (
-                                <strong
-                                  className="font-bold text-blue-400"
-                                  {...props}
-                                />
-                              ),
-
-                              code: ({ node, ...props }) => (
-                                <code
-                                  className="bg-gray-800 text-yellow-300 px-1.5 py-0.5 rounded text-sm font-mono"
-                                  {...props}
-                                />
-                              ),
-                            }}
-                          >
-                            {displayedText}
-                          </ReactMarkdown>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(result)}
-                        className="mt-2 text-xs text-gray-500 hover:text-white transition-colors flex items-center gap-1"
-                      >
-                        📋 Kopyala
-                      </button>
-                    </>
-                  )}
+                <div className="flex space-x-2 animate-pulse p-4 bg-gray-900/50 rounded-2xl rounded-tl-none border border-gray-800/50">
+                  <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
+                  <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
                 </div>
               </div>
             )}
+
+            <div ref={bottomRef} />
           </div>
         )}
       </div>
-
-      {/* Input Alanı */}
+      
+      {/* INPUT ALANI AYNI KALSIN... */}
       <div className="absolute bottom-0 left-0 right-0 bg-gray-950/80 backdrop-blur-md border-t border-gray-800 p-4 md:p-6">
         <div className="max-w-3xl mx-auto relative">
           <textarea
