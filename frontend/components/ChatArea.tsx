@@ -1,6 +1,7 @@
 "use client";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useState, useEffect } from "react";
 
 interface ChatAreaProps {
   prompt: string;
@@ -21,8 +22,30 @@ export default function ChatArea({
   onGenerate,
   cooldown,
   recentPrompt,
-  onOpenSidebar, // <-- Buraya eklemeyi unutma
+  onOpenSidebar,
 }: ChatAreaProps) {
+  const [displayedText, setDisplayedText] = useState("");
+
+  useEffect(() => {
+    if (!result || loading) {
+      setDisplayedText("");
+      return;
+    }
+
+    let currentIndex = 0;
+    const intervalId = setInterval(() => {
+      setDisplayedText(result.slice(0, currentIndex + 1));
+      currentIndex++;
+
+      if (currentIndex === result.length) {
+        clearInterval(intervalId);
+      }
+    }, 10);
+
+    return () => clearInterval(intervalId);
+
+  }, [result, loading]);
+
   return (
     <main className="flex-1 flex flex-col h-full relative bg-gray-950 w-full">
       {/* MOBİL HAMBURGER MENÜ BUTONU 
@@ -76,7 +99,7 @@ export default function ChatArea({
                       <div className="bg-gray-900/50 p-6 rounded-2xl rounded-tl-none border border-gray-800/50 text-gray-200 shadow-xl overflow-x-auto">
                         <div className="prose prose-invert max-w-none">
                           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {result}
+                            {displayedText}
                           </ReactMarkdown>
                         </div>
                       </div>
