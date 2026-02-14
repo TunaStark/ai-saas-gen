@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar"; // <-- Import ettik
 import ChatArea from "../components/ChatArea"; // <-- Import ettik
+import toast from "react-hot-toast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 // Tip Tanımlamaları
@@ -90,7 +91,7 @@ export default function Home() {
         setHistory([newItem, ...history]);
         startCooldown(10);
       } else {
-        setResult("⚠️ Hata: " + data.detail);
+        toast.error(data.detail || "Bir hata oluştu");
         setPrompt(currentPrompt);
       }
     } catch (error) {
@@ -109,7 +110,14 @@ export default function Home() {
   };
 
   const deleteHistoryItem = async (id: number) => {
+    // Çirkin confirm yerine Toast Promise kullanalım mı? 
+    // Veya şimdilik basitlik için confirm kalsın, başarı mesajı toast olsun.
+    // (Custom confirm biraz uzun sürer, şimdilik native confirm kalsın ama başarı mesajı toast olsun)
+    
     if (!confirm("Bu sohbeti silmek istediğine emin misin?")) return;
+
+    // Toast Promise: İşlem başlarken, sürerken ve bitince otomatik mesaj verir
+    const loadingToast = toast.loading("Siliniyor...");
 
     try {
       const res = await fetch(`${API_URL}/api/history/${id}`, {
@@ -118,15 +126,23 @@ export default function Home() {
 
       if (res.ok) {
         setHistory((prev) => prev.filter((item) => item.id !== id));
-        
         if (recentPrompt === history.find(i => i.id === id)?.prompt) {
              setPrompt("");
              setResult("");
              setRecentPrompt("");
         }
+        
+        // Yükleniyor mesajını sil ve başarı mesajı ver
+        toast.dismiss(loadingToast);
+        toast.success("Sohbet başarıyla silindi! 🗑️");
+      } else {
+        toast.dismiss(loadingToast);
+        toast.error("Silinemedi bir hata oluştu.");
       }
     } catch (error) {
-      console.error("Silme hatası:", error);
+      toast.dismiss(loadingToast);
+      toast.error("Bağlantı hatası!");
+      console.error(error);
     }
   };
 
