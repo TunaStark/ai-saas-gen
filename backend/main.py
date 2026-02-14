@@ -34,7 +34,8 @@ app.add_middleware(
 # GÜNCELLEME 1: Artık session_id de istiyoruz
 class AIRequest(BaseModel):
     prompt: str
-    session_id: str 
+    session_id: str
+    history: list = []
 
 @app.get("/")
 def read_root():
@@ -56,32 +57,42 @@ def get_history(session_id: str):
 
 @app.post("/api/generate")
 async def generate_content(request: AIRequest):
-    try:
-        response = client.models.generate_content(
-            model='gemini-2.5-flash-lite', 
-            contents=request.prompt
-        )
-        ai_response_text = response.text
+    max_retries = 3
 
-        # GÜNCELLEME 2: Kaydederken session_id'yi de ekliyoruz
-        try:
-            supabase.table("history").insert({
-                "prompt": request.prompt,
-                "response": ai_response_text,
-                "session_id": request.session_id # <-- Kimlik eklendi
-            }).execute()
-            print("✅ Kayıt Başarılı")
-        except Exception as db_error:
-            print(f"⚠️ DB Hatası: {db_error}")
-
-        return {"result": ai_response_text}
+    formatted_history = []
+    for msg in request.history:
+        formatted_history.append({
+            "role": msg["role"],
+            "parts": [{"text": part} for part in msg["parts"]]
+        })
     
-    except Exception as e:
-        # Hata yakalama bloğu aynı kalabilir
-        if "429" in str(e) or "Quota" in str(e):
-             raise HTTPException(status_code=429, detail="Limit doldu.")
-        print(f"Hata: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    chat_history = formatted_history
+    
+    for attempt in range(max_retries):
+        try:
+            chat = client.chats.create(
+                model='gemini-2.5-flash',
+                history=chat_history
+            )
+            
+            response = chat.send_message(request.prompt)
+            ai_response_text = response.text
+
+            try:
+                supabase.table("history").insert({
+                    "prompt": request.prompt,
+                    "response": ai_response_text,
+                    "session_id": request.session_id
+                }).execute()
+            except Exception as db_error:
+                print(f"⚠️ DB Hatası: {db_error}")
+
+            return {"result": ai_response_text}
+        
+        except Exception as e:
+            print(f"Deneme {attempt+1} Hatası: {e}")
+            if attempt == max_retries - 1:
+                 raise HTTPException(status_code=500, detail=str(e))
     
 @app.delete("/api/history/{id}")
 async def delete_history(id: int):
