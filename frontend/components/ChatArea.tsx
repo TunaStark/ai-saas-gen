@@ -27,29 +27,26 @@ export default function ChatArea({
   loading,
   onGenerate,
   cooldown,
-  recentPrompt,
   onOpenSidebar,
   messages,
 }: ChatAreaProps) {
   const [displayedText, setDisplayedText] = useState("");
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null); // 📋 YENİ STATE
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // 1. SCROLL EFEKTİ
-  // Mesajlar değişince veya animasyonlu metin uzadıkça kaydır
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
   // 2. MATRİX (DAKTİLO) EFEKTİ
   useEffect(() => {
-    // Eğer sonuç boşsa veya yükleniyorsa temizle
     if (!result || loading) {
       setDisplayedText(""); 
       return;
     }
 
     let currentIndex = 0;
-    // PÜF NOKTASI: İlk karakteri hemen bas ki boşluk görüp tam metne dönmesin
     setDisplayedText(result[0] || ""); 
 
     const intervalId = setInterval(() => {
@@ -59,10 +56,18 @@ export default function ChatArea({
       }
       currentIndex++;
       setDisplayedText((prev) => result.slice(0, currentIndex + 1));
-    }, 3); // Hız
+    }, 10); 
 
     return () => clearInterval(intervalId);
   }, [result, loading]);
+
+  // 📋 YENİ FONKSİYON: Kopyalama İşlemi
+  const handleCopy = (text: string, index: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedIndex(index);
+    // 2 saniye sonra ikonu eski haline getir
+    setTimeout(() => setCopiedIndex(null), 2000);
+  };
 
   return (
     <main className="flex-1 flex flex-col h-full relative bg-gray-950 w-full">
@@ -88,15 +93,8 @@ export default function ChatArea({
         ) : (
           <div className="max-w-3xl mx-auto pt-10 md:pt-0 mb-32 space-y-8">
             {messages.map((msg, index) => {
-              // Mantık: 
-              // 1. Bu son mesaj mı?
-              // 2. Bu bir model (AI) mesajı mı?
-              // 3. Elimizde aktif bir 'result' var mı? (Varsa şu an yazılıyor demektir)
               const isLastAiMessage = index === messages.length - 1 && msg.role === "model";
               const isStreaming = isLastAiMessage && result && !loading;
-              
-              // Eğer streaming varsa displayedText göster, yoksa veritabanındaki tam metni göster.
-              // Eğer displayedText boşsa bile (ilk anda) boşluk göster (" "), sakın tam metni gösterme.
               const textToShow = isStreaming ? (displayedText || " ") : msg.parts[0];
 
               return (
@@ -114,7 +112,7 @@ export default function ChatArea({
                   {/* MESAJ BALONU */}
                   <div
                     className={`
-                      p-4 rounded-2xl max-w-[85%] border shadow-xl text-gray-200
+                      p-4 rounded-2xl max-w-[85%] border shadow-xl text-gray-200 relative group
                       ${
                         msg.role === "user"
                           ? "bg-gray-800 border-gray-700 rounded-tr-none"
@@ -125,25 +123,49 @@ export default function ChatArea({
                     {msg.role === "user" ? (
                       msg.parts[0]
                     ) : (
-                      // MARKDOWN ALANI
-                      <div className="prose prose-invert max-w-none">
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        <ReactMarkdown
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            p: ({ node, ...props }) => <p className="mb-4 leading-relaxed text-gray-300" {...props} />,
-                            ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />,
-                            ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />,
-                            li: ({ node, ...props }) => <li className="mb-1 leading-relaxed" {...props} />,
-                            h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mt-6 mb-4 text-white" {...props} />,
-                            h2: ({ node, ...props }) => <h2 className="text-xl font-bold mt-5 mb-3 text-white" {...props} />,
-                            strong: ({ node, ...props }) => <strong className="font-bold text-blue-400" {...props} />,
-                            code: ({ node, ...props }) => <code className="bg-gray-800 text-yellow-300 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />,
-                          }}
-                        >
-                          {textToShow} 
-                        </ReactMarkdown>
-                      </div>
+                      <>
+                        {/* MARKDOWN ALANI */}
+                        <div className="prose prose-invert max-w-none">
+                          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{
+                              p: ({ node, ...props }) => <p className="mb-4 leading-relaxed text-gray-300" {...props} />,
+                              ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />,
+                              ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />,
+                              li: ({ node, ...props }) => <li className="mb-1 leading-relaxed" {...props} />,
+                              h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mt-6 mb-4 text-white" {...props} />,
+                              h2: ({ node, ...props }) => <h2 className="text-xl font-bold mt-5 mb-3 text-white" {...props} />,
+                              h3: ({ node, ...props }) => <h3 className="text-lg font-bold mt-4 mb-2 text-white" {...props} />,
+                              strong: ({ node, ...props }) => <strong className="font-bold text-blue-400" {...props} />,
+                              code: ({ node, ...props }) => <code className="bg-gray-800 text-yellow-300 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />,
+                            }}
+                          >
+                            {textToShow} 
+                          </ReactMarkdown>
+                        </div>
+
+                        {/* 📋 KOPYALA BUTONU (Sadece AI mesajlarında ve metin oluştuğunda) */}
+                        {(!isStreaming || textToShow.length > 5) && (
+                            <div className="flex justify-end mt-2 pt-2 border-t border-gray-800/50">
+                                <button 
+                                    onClick={() => handleCopy(msg.parts[0], index)}
+                                    className="text-xs flex items-center gap-1.5 text-gray-500 hover:text-white transition-colors py-1 px-2 rounded hover:bg-gray-800"
+                                    title="Metni Kopyala"
+                                >
+                                    {copiedIndex === index ? (
+                                        <>
+                                            <span className="text-green-400">✓</span> Kopyalandı
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>📋</span> Kopyala
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -175,8 +197,8 @@ export default function ChatArea({
           </div>
         )}
       </div>
-      
-      {/* INPUT ALANI AYNI KALSIN... */}
+
+      {/* INPUT ALANI */}
       <div className="absolute bottom-0 left-0 right-0 bg-gray-950/80 backdrop-blur-md border-t border-gray-800 p-4 md:p-6">
         <div className="max-w-3xl mx-auto relative">
           <textarea
