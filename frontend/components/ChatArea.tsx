@@ -59,7 +59,7 @@ export default function ChatArea({
       }
       currentIndex++;
       setDisplayedText((prev) => result.slice(0, currentIndex + 1));
-    }, 10); // Hız
+    }, 3); // Hız
 
     return () => clearInterval(intervalId);
   }, [result, loading]);
