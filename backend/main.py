@@ -41,15 +41,40 @@ class AIRequest(BaseModel):
 def read_root():
     return {"durum": "AI Servisi Hazır 🚀"} 
 
+@app.get("/api/sessions")
+def get_sessions():
+    try:
+        # Tüm geçmişi en eskiden en yeniye doğru çek
+        response = supabase.table("history").select("*").order("created_at", desc=False).execute()
+        
+        # Python ile session_id'ye göre grupla
+        sessions = {}
+        for row in response.data:
+            sid = row["session_id"]
+            # Bir session ilk kez görülüyorsa (ilk mesajsa) onu başlık yap
+            if sid not in sessions:
+                sessions[sid] = {
+                    "session_id": sid,
+                    "title": row["prompt"], # İlk soruyu başlık yapıyoruz
+                    "created_at": row["created_at"]
+                }
+        
+        # Listeye çevir ve tarihe göre en yeni en üstte olacak şekilde sırala
+        session_list = list(sessions.values())
+        session_list.sort(key=lambda x: x["created_at"], reverse=True)
+        
+        return session_list
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # YENİ ENDPOINT: Geçmişi Getir
 @app.get("/api/history/{session_id}")
-def get_history(session_id: str):
+def get_session_history(session_id: str):
     try:
-        # Sadece bu session_id'ye ait verileri çek, tarihe göre sırala
         response = supabase.table("history")\
             .select("*")\
             .eq("session_id", session_id)\
-            .order("created_at", desc=True)\
+            .order("created_at", desc=False)\
             .execute()
         return response.data
     except Exception as e:
@@ -94,11 +119,11 @@ async def generate_content(request: AIRequest):
             if attempt == max_retries - 1:
                  raise HTTPException(status_code=500, detail=str(e))
     
-@app.delete("/api/history/{id}")
-async def delete_history(id: int):
+@app.delete("/api/sessions/{session_id}")
+async def delete_session(session_id: str):
     try:
-        # Supabase'den ID'ye göre sil
-        supabase.table("history").delete().eq("id", id).execute()
-        return {"message": "Başarıyla silindi"}
+        # Supabase'den o session_id'ye ait TÜM satırları sil
+        supabase.table("history").delete().eq("session_id", session_id).execute()
+        return {"message": "Oturum başarıyla silindi"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
