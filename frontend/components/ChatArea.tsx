@@ -172,7 +172,7 @@ export default function ChatArea({
                   {/* USER AVATAR */}
                   {msg.role === "user" && (
                     <div className="w-8 h-8 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center text-sm font-bold text-white">
-                      S
+                      U
                     </div>
                   )}
                 </div>
