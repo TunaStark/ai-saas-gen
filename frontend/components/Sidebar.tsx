@@ -38,7 +38,7 @@ export default function Sidebar({
         {/* Başlık */}
         <div className="p-4 border-b border-gray-800 flex justify-between items-center">
           <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            AI Studio
+            TunaxG AI Studio
           </h2>
           <button onClick={close} className="md:hidden text-gray-400 hover:text-white p-1">✕</button>
         </div>
