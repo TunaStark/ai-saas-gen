@@ -42,12 +42,12 @@ export default function ChatArea({
   // 2. MATRİX (DAKTİLO) EFEKTİ
   useEffect(() => {
     if (!result || loading) {
-      setDisplayedText(""); 
+      setDisplayedText("");
       return;
     }
 
     let currentIndex = 0;
-    setDisplayedText(result[0] || ""); 
+    setDisplayedText(result[0] || "");
 
     const intervalId = setInterval(() => {
       if (currentIndex >= result.length - 1) {
@@ -55,8 +55,8 @@ export default function ChatArea({
         return;
       }
       currentIndex++;
-      setDisplayedText((prev) => result.slice(0, currentIndex + 1));
-    }, 10); 
+      setDisplayedText(() => result.slice(0, currentIndex + 1));
+    }, 3);
 
     return () => clearInterval(intervalId);
   }, [result, loading]);
@@ -93,9 +93,12 @@ export default function ChatArea({
         ) : (
           <div className="max-w-3xl mx-auto pt-10 md:pt-0 mb-32 space-y-8">
             {messages.map((msg, index) => {
-              const isLastAiMessage = index === messages.length - 1 && msg.role === "model";
+              const isLastAiMessage =
+                index === messages.length - 1 && msg.role === "model";
               const isStreaming = isLastAiMessage && result && !loading;
-              const textToShow = isStreaming ? (displayedText || " ") : msg.parts[0];
+              const textToShow = isStreaming
+                ? displayedText || " "
+                : msg.parts[0];
 
               return (
                 <div
@@ -104,7 +107,7 @@ export default function ChatArea({
                 >
                   {/* AI AVATAR */}
                   {msg.role === "model" && (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex flex-shrink-0 items-center justify-center text-xs font-bold text-white">
+                    <div className="w-8 h-8 rounded-full bg-linear-to-r from-blue-600 to-purple-600 flex shrink-0 items-center justify-center text-xs font-bold text-white">
                       AI
                     </div>
                   )}
@@ -130,40 +133,94 @@ export default function ChatArea({
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
                             components={{
-                              p: ({ node, ...props }) => <p className="mb-4 leading-relaxed text-gray-300" {...props} />,
-                              ul: ({ node, ...props }) => <ul className="list-disc pl-6 mb-4 space-y-2" {...props} />,
-                              ol: ({ node, ...props }) => <ol className="list-decimal pl-6 mb-4 space-y-2" {...props} />,
-                              li: ({ node, ...props }) => <li className="mb-1 leading-relaxed" {...props} />,
-                              h1: ({ node, ...props }) => <h1 className="text-2xl font-bold mt-6 mb-4 text-white" {...props} />,
-                              h2: ({ node, ...props }) => <h2 className="text-xl font-bold mt-5 mb-3 text-white" {...props} />,
-                              h3: ({ node, ...props }) => <h3 className="text-lg font-bold mt-4 mb-2 text-white" {...props} />,
-                              strong: ({ node, ...props }) => <strong className="font-bold text-blue-400" {...props} />,
-                              code: ({ node, ...props }) => <code className="bg-gray-800 text-yellow-300 px-1.5 py-0.5 rounded text-sm font-mono" {...props} />,
+                              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                              p: ({ node, ...props }) => (
+                                <p
+                                  className="mb-4 leading-relaxed text-gray-300"
+                                  {...props}
+                                />
+                              ),
+                              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                              ul: ({ node, ...props }) => (
+                                <ul
+                                  className="list-disc pl-6 mb-4 space-y-2"
+                                  {...props}
+                                />
+                              ),
+                              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                              ol: ({ node, ...props }) => (
+                                <ol
+                                  className="list-decimal pl-6 mb-4 space-y-2"
+                                  {...props}
+                                />
+                              ),
+                              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                              li: ({ node, ...props }) => (
+                                <li
+                                  className="mb-1 leading-relaxed"
+                                  {...props}
+                                />
+                              ),
+                              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                              h1: ({ node, ...props }) => (
+                                <h1
+                                  className="text-2xl font-bold mt-6 mb-4 text-white"
+                                  {...props}
+                                />
+                              ),
+                              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                              h2: ({ node, ...props }) => (
+                                <h2
+                                  className="text-xl font-bold mt-5 mb-3 text-white"
+                                  {...props}
+                                />
+                              ),
+                              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                              h3: ({ node, ...props }) => (
+                                <h3
+                                  className="text-lg font-bold mt-4 mb-2 text-white"
+                                  {...props}
+                                />
+                              ),
+                              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                              strong: ({ node, ...props }) => (
+                                <strong
+                                  className="font-bold text-blue-400"
+                                  {...props}
+                                />
+                              ),
+                              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                              code: ({ node, ...props }) => (
+                                <code
+                                  className="bg-gray-800 text-yellow-300 px-1.5 py-0.5 rounded text-sm font-mono"
+                                  {...props}
+                                />
+                              ),
                             }}
                           >
-                            {textToShow} 
+                            {textToShow}
                           </ReactMarkdown>
                         </div>
-
                         {/* 📋 KOPYALA BUTONU (Sadece AI mesajlarında ve metin oluştuğunda) */}
                         {(!isStreaming || textToShow.length > 5) && (
-                            <div className="flex justify-end mt-2 pt-2 border-t border-gray-800/50">
-                                <button 
-                                    onClick={() => handleCopy(msg.parts[0], index)}
-                                    className="text-xs flex items-center gap-1.5 text-gray-500 hover:text-white transition-colors py-1 px-2 rounded hover:bg-gray-800"
-                                    title="Metni Kopyala"
-                                >
-                                    {copiedIndex === index ? (
-                                        <>
-                                            <span className="text-green-400">✓</span> Kopyalandı
-                                        </>
-                                    ) : (
-                                        <>
-                                            <span>📋</span> Kopyala
-                                        </>
-                                    )}
-                                </button>
-                            </div>
+                          <div className="flex justify-end mt-2 pt-2 border-t border-gray-800/50">
+                            <button
+                              onClick={() => handleCopy(msg.parts[0], index)}
+                              className="text-xs flex items-center gap-1.5 text-gray-500 hover:text-white transition-colors py-1 px-2 rounded hover:bg-gray-800"
+                              title="Metni Kopyala"
+                            >
+                              {copiedIndex === index ? (
+                                <>
+                                  <span className="text-green-400">✓</span>{" "}
+                                  Kopyalandı
+                                </>
+                              ) : (
+                                <>
+                                  <span>📋</span> Kopyala
+                                </>
+                              )}
+                            </button>
+                          </div>
                         )}
                       </>
                     )}
@@ -171,7 +228,7 @@ export default function ChatArea({
 
                   {/* USER AVATAR */}
                   {msg.role === "user" && (
-                    <div className="w-8 h-8 rounded-full bg-gray-700 flex flex-shrink-0 items-center justify-center text-sm font-bold text-white">
+                    <div className="w-8 h-8 rounded-full bg-gray-700 flex shrink-0 items-center justify-center text-sm font-bold text-white">
                       U
                     </div>
                   )}
@@ -182,7 +239,7 @@ export default function ChatArea({
             {/* YÜKLENİYOR ANİMASYONU */}
             {loading && (
               <div className="flex gap-4">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex flex-shrink-0 items-center justify-center text-xs font-bold text-white">
+                <div className="w-8 h-8 rounded-full bg-linear-to-r from-blue-600 to-purple-600 flex shrink-0 items-center justify-center text-xs font-bold text-white">
                   AI
                 </div>
                 <div className="flex space-x-2 animate-pulse p-4 bg-gray-900/50 rounded-2xl rounded-tl-none border border-gray-800/50">
