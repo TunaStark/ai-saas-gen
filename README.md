@@ -1,10 +1,10 @@
 # 🚀 AI Assistant Studio (Full-Stack AI SaaS)
 
-Google Gemini 2.0 altyapısını kullanan, bağlam farkındalığına (Context Awareness) sahip, gerçek zamanlı veri akışı (Streaming) sunan modern bir yapay zeka asistanı. 
+Google Gemini 2.5 altyapısını kullanan, bağlam farkındalığına (Context Awareness) sahip, gerçek zamanlı veri akışı (Streaming) sunan modern bir yapay zeka asistanı. 
 
 Bu proje, modern web teknolojilerini (Next.js & FastAPI) bir araya getirerek, kullanıcılara ChatGPT benzeri akıcı ve profesyonel bir deneyim sunmayı amaçlamaktadır.
 
-![Proje Ekran Görüntüsü](frontend/public/ai-preview.png) *(Buraya kendi ekran görüntünün yolunu veya GitHub URL'sini koyabilirsin)*
+![Proje Ekran Görüntüsü](./frontend/public/ai-preview.png)
 
 ---
 
@@ -40,28 +40,14 @@ Bu proje, modern web teknolojilerini (Next.js & FastAPI) bir araya getirerek, ku
 
 Projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyebilirsiniz.
 
-🗺️ Yol Haritası (Roadmap)
-[x] Temel Soru-Cevap API'si
-
-[x] Supabase veritabanı entegrasyonu
-
-[x] Markdown render desteği
-
-[x] Matrix/Streaming daktilo efekti
-
-[x] Oturum (Session) bazlı hafıza yönetimi
-
-[ ] Kullanıcı Girişi (Auth - Supabase veya NextAuth)
-
-[ ] Sesli komut (Speech-to-Text) desteği
-
-[ ] PDF okutma ve doküman üzerinde sohbet
-
 ### 1. Depoyu Klonlayın
 ```bash
 git clone [https://github.com/TunaStark/ai-saas-gen.git](https://github.com/TunaStark/ai-saas-gen.git)
-cd REPON
+cd ai-saas-gen
+```
 
+### 2. Backend Ayarları
+```bash
 cd backend
 # Gerekli kütüphaneleri yükleyin
 pip install fastapi uvicorn pydantic google-genai supabase python-dotenv
@@ -73,8 +59,12 @@ pip install fastapi uvicorn pydantic google-genai supabase python-dotenv
 
 # Sunucuyu başlatın
 uvicorn main:app --reload
+```
+*Backend `http://127.0.0.1:8000` adresinde çalışmaya başlayacaktır.*
 
-cd frontend
+### 3. Frontend Ayarları
+```bash
+cd ../frontend
 # Bağımlılıkları yükleyin
 npm install
 
@@ -83,3 +73,17 @@ npm install
 
 # Uygulamayı başlatın
 npm run dev
+```
+*Frontend `http://localhost:3000` adresinde çalışmaya başlayacaktır.*
+
+---
+
+## 🗺️ Yol Haritası (Roadmap)
+- [x] Temel Soru-Cevap API'si
+- [x] Supabase veritabanı entegrasyonu
+- [x] Markdown render desteği
+- [x] Matrix/Streaming daktilo efekti
+- [x] Oturum (Session) bazlı hafıza yönetimi
+- [ ] Kullanıcı Girişi (Auth - Supabase veya NextAuth)
+- [ ] Sesli komut (Speech-to-Text) desteği
+- [ ] PDF okutma ve doküman üzerinde sohbet
