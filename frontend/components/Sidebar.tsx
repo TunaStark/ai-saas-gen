@@ -80,7 +80,7 @@ export default function Sidebar({
                     e.stopPropagation(); 
                     onDelete(item.session_id);
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-red-500 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   title="Sil"
                 >
                   🗑️
