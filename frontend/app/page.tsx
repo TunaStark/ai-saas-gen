@@ -20,7 +20,6 @@ export default function Home() {
       />
       
       <ChatArea
-        recentPrompt=""
         messages={chatLogic.messages}
         prompt={chatLogic.prompt}
         setPrompt={chatLogic.setPrompt}
