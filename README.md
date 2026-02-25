@@ -1,89 +1,97 @@
 # 🚀 AI Assistant Studio (Full-Stack AI SaaS)
 
-Google Gemini 2.5 altyapısını kullanan, bağlam farkındalığına (Context Awareness) sahip, gerçek zamanlı veri akışı (Streaming) sunan modern bir yapay zeka asistanı. 
+[![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Google Gemini](https://img.shields.io/badge/Gemini_2.5-8E75B2?style=for-the-badge&logo=googlebard&logoColor=white)](https://deepmind.google/technologies/gemini/)
+[![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
-Bu proje, modern web teknolojilerini (Next.js & FastAPI) bir araya getirerek, kullanıcılara ChatGPT benzeri akıcı ve profesyonel bir deneyim sunmayı amaçlamaktadır.
+A modern, context-aware artificial intelligence assistant powered by the **Google Gemini 2.5** infrastructure. It features real-time data streaming and session-based memory.
 
-![Proje Ekran Görüntüsü](./frontend/public/ai-preview.png)
+This project bridges modern web technologies (**Next.js & FastAPI**) to deliver a fluid, professional, and ChatGPT-like user experience.
 
----
-
-## ✨ Öne Çıkan Özellikler
-
-* 🧠 **Bağlam Farkındalığı (Context-Aware):** Sadece tek bir soruyu değil, tüm oturumun geçmişini hatırlayarak akıllı cevaplar üretir.
-* 🌊 **Gerçek Zamanlı Yazım Efekti (Streaming):** Yapay zekanın cevapları, doğal bir hissiyat vermek için "daktilo" (matrix) efektiyle ekrana dökülür.
-* 📝 **Gelişmiş Markdown Desteği:** Kod blokları (syntax highlighting), tablolar, kalın yazılar ve listeler kusursuz bir şekilde render edilir.
-* 📂 **Oturum Yönetimi (Session-Based History):** Sohbetler birbirine karışmaz; her konuşma kendi ID'si altında gruplanır ve geçmişten kolayca yüklenebilir.
-* 📋 **Tek Tıkla Kopyalama:** Uzun cevapları veya kod bloklarını anında panoya kopyalama imkanı sunar.
-* 📱 **Tam Responsive Tasarım:** Mobilde hamburger menü ile daralan, masaüstünde genişleyen kusursuz Tailwind CSS mimarisi.
-* 🍞 **Şık Bildirimler:** İşlem durumları (Silme, Hata vs.) React Hot Toast ile şık pop-up'lar halinde kullanıcıya sunulur.
+![Project Screenshot](./frontend/public/ai-preview.png)
 
 ---
 
-## 🛠️ Kullanılan Teknolojiler (Tech Stack)
+## ✨ Key Features
 
-### Frontend (Kullanıcı Arayüzü)
+* 🧠 **Context-Aware Memory:** It doesn't just answer single queries; it remembers the entire session history to generate intelligent, context-driven responses.
+* 🌊 **Real-Time Streaming:** AI responses are streamed to the client with a smooth "typewriter" effect, simulating a natural conversational flow.
+* 📝 **Advanced Markdown Rendering:** Flawlessly renders code blocks (with syntax highlighting), tables, bold text, and lists.
+* 📂 **Session Management:** Conversations never mix. Each chat is grouped under its own unique ID and securely stored for easy future retrieval.
+* 📋 **One-Click Copy:** Instantly copy long AI responses or complex code blocks to your clipboard with a single click.
+* 📱 **Fully Responsive UI:** A flawless Tailwind CSS architecture featuring a collapsible hamburger menu on mobile and an expansive layout on desktop.
+* 🍞 **Elegant Notifications:** Real-time feedback for user actions (deletions, connection errors, etc.) presented as sleek pop-ups via React Hot Toast.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend (Client)
 * **Framework:** [Next.js 14](https://nextjs.org/) (App Router) & React
-* **Dil:** TypeScript
-* **Stil:** Tailwind CSS
+* **Language:** TypeScript
+* **Styling:** Tailwind CSS
 * **Markdown:** `react-markdown`, `remark-gfm`, `@tailwindcss/typography`
-* **Bildirimler:** `react-hot-toast`
+* **Notifications:** `react-hot-toast`
 
-### Backend (Sunucu & API)
+### Backend (Server & API)
 * **Framework:** [FastAPI](https://fastapi.tiangolo.com/) (Python)
 * **AI Model:** Google Gemini API (`gemini-2.5-flash`)
-* **Veritabanı:** Supabase (PostgreSQL)
+* **Database:** Supabase (PostgreSQL)
 
 ---
 
-## 🚀 Kurulum (Local Development)
+## 🚀 Getting Started (Local Development)
 
-Projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyebilirsiniz.
+Follow these steps to run the project on your local machine.
 
-### 1. Depoyu Klonlayın
+### 1. Clone the Repository
 ```bash
-git clone [https://github.com/TunaStark/ai-saas-gen.git](https://github.com/TunaStark/ai-saas-gen.git)
+git clone https://github.com/TunaStark/ai-saas-gen.git
 cd ai-saas-gen
 ```
 
-### 2. Backend Ayarları
+### 2. Backend Setup
 ```bash
 cd backend
-# Gerekli kütüphaneleri yükleyin
+
+# Install required Python dependencies
 pip install fastapi uvicorn pydantic google-genai supabase python-dotenv
 
-# .env dosyasını oluşturun ve API anahtarlarınızı girin
+# Create a .env file and add your API keys
 # GEMINI_API_KEY=your_api_key
 # SUPABASE_URL=your_supabase_url
 # SUPABASE_KEY=your_supabase_key
 
-# Sunucuyu başlatın
+# Start the FastAPI server
 uvicorn main:app --reload
 ```
-*Backend `http://127.0.0.1:8000` adresinde çalışmaya başlayacaktır.*
+*The backend server will start running at `http://127.0.0.1:8000`.*
 
-### 3. Frontend Ayarları
+### 3. Frontend Setup
 ```bash
 cd ../frontend
-# Bağımlılıkları yükleyin
+
+# Install Node dependencies
 npm install
 
-# .env.local dosyasını oluşturun (Varsa)
-# NEXT_PUBLIC_API_URL=[http://127.0.0.1:8000](http://127.0.0.1:8000)
+# Create a .env.local file (if applicable)
+# NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
 
-# Uygulamayı başlatın
+# Start the Next.js development server
 npm run dev
 ```
-*Frontend `http://localhost:3000` adresinde çalışmaya başlayacaktır.*
+*The frontend application will be available at `http://localhost:3000`.*
 
 ---
 
-## 🗺️ Yol Haritası (Roadmap)
-- [x] Temel Soru-Cevap API'si
-- [x] Supabase veritabanı entegrasyonu
-- [x] Markdown render desteği
-- [x] Matrix/Streaming daktilo efekti
-- [x] Oturum (Session) bazlı hafıza yönetimi
-- [ ] Kullanıcı Girişi (Auth - Supabase veya NextAuth)
-- [ ] Sesli komut (Speech-to-Text) desteği
-- [ ] PDF okutma ve doküman üzerinde sohbet
+## 🗺️ Roadmap
+- [x] Core Q&A API integration
+- [x] Supabase database integration
+- [x] Markdown rendering support
+- [x] Real-time streaming (Typewriter effect)
+- [x] Session-based memory management
+- [ ] User Authentication (Supabase Auth / NextAuth)
+- [ ] Speech-to-Text command support
+- [ ] Document chat (PDF parsing & RAG)
