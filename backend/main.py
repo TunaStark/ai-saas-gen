@@ -4,8 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from google import genai
-from dotenv import load_dotenv # type: ignore
-from supabase import create_client, Client # type: ignore
+from dotenv import load_dotenv  # type: ignore
+from supabase import create_client, Client  # type: ignore
 
 # Load environment variables
 load_dotenv()
@@ -52,30 +52,13 @@ def read_root():
 @app.get("/api/sessions")
 def get_sessions():
     """
-    Retrieves all chat sessions from Supabase.
-    Groups history rows by session_id and uses the very first prompt as the session title.
+    Fetches all chat sessions directly from the 'sessions' table. 
+    Fast, relational, and highly scalable!
     """
     try:
-        # Fetch all history ordered by creation time (oldest to newest)
-        response = supabase.table("history").select("*").order("created_at", desc=False).execute()
-        
-        # Group data by session_id using Python
-        sessions = {}
-        for row in response.data:
-            sid = row["session_id"]
-            # If the session is seen for the first time, set the first prompt as title
-            if sid not in sessions:
-                sessions[sid] = {
-                    "session_id": sid,
-                    "title": row["prompt"], 
-                    "created_at": row["created_at"]
-                }
-        
-        # Convert dictionary to list and sort by created_at (newest on top)
-        session_list = list(sessions.values())
-        session_list.sort(key=lambda x: x["created_at"], reverse=True)
-        
-        return session_list
+        # We NO LONGER download all history. We just ask the 'sessions' table!
+        response = supabase.table("sessions").select("*").order("created_at", desc=True).execute()
+        return response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -92,11 +75,11 @@ def get_session_history(session_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# 🌟 THE NEW STREAMING LOGIC
+# 🌟 THE STREAMING & DB INSERT LOGIC
 async def generate_and_stream(request: AIRequest):
     """
-    Generator function that streams Gemini response chunk by chunk.
-    Also saves the complete response to Supabase after the stream finishes.
+    Streams Gemini response chunk by chunk.
+    Creates a new Session if it doesn't exist, then saves the History.
     """
     formatted_history = []
     for msg in request.history:
@@ -111,19 +94,27 @@ async def generate_and_stream(request: AIRequest):
             history=formatted_history
         )
         
-        # Request a streamed response from Gemini
         response_stream = chat.send_message_stream(request.prompt)
-        
         full_response = ""
         
-        # Yield each chunk as it arrives to the client
         for chunk in response_stream:
             text_chunk = chunk.text
             full_response += text_chunk
             yield text_chunk
 
-        # Once the stream is done, save the full interaction to Supabase
+        # Once the stream is done, save the interaction to Supabase
         try:
+            # 1. Check if this session already exists in the "sessions" table
+            session_check = supabase.table("sessions").select("session_id").eq("session_id", request.session_id).execute()
+            
+            # If not (new chat), insert the title into "sessions" table first!
+            if not session_check.data:
+                supabase.table("sessions").insert({
+                    "session_id": request.session_id,
+                    "title": request.prompt 
+                }).execute()
+
+            # 2. Then, insert the message into the "history" table
             supabase.table("history").insert({
                 "prompt": request.prompt,
                 "response": full_response,
@@ -137,19 +128,17 @@ async def generate_and_stream(request: AIRequest):
 
 @app.post("/api/generate")
 async def generate_content(request: AIRequest):
-    """
-    Receives user prompt and history, then returns a StreamingResponse
-    to send the AI response back character by character (or chunk by chunk).
-    """
-    # We use text/event-stream or text/plain depending on how frontend consumes it.
-    # text/plain is usually easier to parse with a basic ReadableStream on the frontend.
+    """Returns a StreamingResponse to send the AI response character by character."""
     return StreamingResponse(generate_and_stream(request), media_type="text/plain")
     
 @app.delete("/api/sessions/{session_id}")
 async def delete_session(session_id: str):
-    """Deletes all chat history rows associated with a specific session_id."""
+    """
+    Deletes a session from the 'sessions' table. 
+    Thanks to 'ON DELETE CASCADE' in SQL, all related history is automatically wiped!
+    """
     try:
-        supabase.table("history").delete().eq("session_id", session_id).execute()
+        supabase.table("sessions").delete().eq("session_id", session_id).execute()
         return {"message": "Session deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
